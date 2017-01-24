@@ -36,8 +36,8 @@ class BackpopulateProgramCredentialsTests(CatalogIntegrationMixin, CredentialsAp
         # skewing mock call counts.
         self.create_credentials_config(enable_learner_issuance=False)
 
-        self.catalog_integration = self.create_catalog_integration()
-        self.service_user = UserFactory(username=self.catalog_integration.service_username)
+        catalog_integration = self.create_catalog_integration()
+        UserFactory(username=self.catalog_integration.service_username)
 
     @ddt.data(True, False)
     def test_handle(self, commit, mock_task, mock_get_programs):

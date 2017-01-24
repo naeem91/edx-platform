@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Helper functions for working with Programs."""
+from collections import defaultdict
 import datetime
 from urlparse import urljoin
 
@@ -12,11 +13,7 @@ from pytz import utc
 from course_modes.models import CourseMode
 from lms.djangoapps.certificates import api as certificate_api
 from lms.djangoapps.commerce.utils import EcommerceService
-from openedx.core.djangoapps.catalog.utils import (
-    get_programs as get_catalog_programs,
-    munge_catalog_program,
-    get_run_marketing_url,
-)
+from openedx.core.djangoapps.catalog.utils import get_programs, get_run_marketing_url
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.programs.models import ProgramsApiConfig
 from openedx.core.lib.edx_api_utils import get_edx_api_data
@@ -27,78 +24,6 @@ from util.organizations_helpers import get_organization_by_short_name
 
 # The datetime module's strftime() methods require a year >= 1900.
 DEFAULT_ENROLLMENT_START_DATE = datetime.datetime(1900, 1, 1, tzinfo=utc)
-
-
-def get_programs(user, program_id=None, use_catalog=False):
-    """Given a user, get programs from the Programs service.
-
-    Returned value is cached depending on user permissions. Staff users making requests
-    against Programs will receive unpublished programs, while regular users will only receive
-    published programs.
-
-    Arguments:
-        user (User): The user to authenticate as when requesting programs.
-
-    Keyword Arguments:
-        program_id (int): Identifies a specific program for which to retrieve data.
-
-    Returns:
-        list of dict, representing programs returned by the Programs service.
-        dict, if a specific program is requested.
-    """
-
-    if use_catalog:
-        programs = [munge_catalog_program(program) for program in get_catalog_programs(user)]
-    else:
-        programs_config = ProgramsApiConfig.current()
-
-        # Bypass caching for staff users, who may be creating Programs and want
-        # to see them displayed immediately.
-        cache_key = programs_config.CACHE_KEY if programs_config.is_cache_enabled and not user.is_staff else None
-
-        programs = get_edx_api_data(programs_config, user, 'programs', resource_id=program_id, cache_key=cache_key)
-
-        # Mix in munged MicroMasters data from the catalog.
-        if not program_id:
-            programs += [
-                munge_catalog_program(micromaster) for micromaster in get_catalog_programs(user, type='MicroMasters')
-            ]
-
-    return programs
-
-
-def get_programs_by_run(programs, enrollments):
-    """Intersect programs and enrollments.
-
-    Builds a dictionary of program dict lists keyed by course ID. The resulting dictionary
-    is suitable for use in applications where programs must be filtered by the course
-    runs they contain (e.g., student dashboard).
-
-    Arguments:
-        programs (list): Containing dictionaries representing programs.
-        enrollments (list): Enrollments from which course IDs to key on can be extracted.
-
-    Returns:
-        tuple, dict of programs keyed by course ID and list of course IDs themselves
-    """
-    programs_by_run = {}
-    # enrollment.course_id is really a course key (╯ಠ_ಠ）╯︵ ┻━┻
-    course_ids = [unicode(e.course_id) for e in enrollments]
-
-    for program in programs:
-        for course_code in program['course_codes']:
-            for run in course_code['run_modes']:
-                run_id = run['course_key']
-                if run_id in course_ids:
-                    program_list = programs_by_run.setdefault(run_id, list())
-                    if program not in program_list:
-                        program_list.append(program)
-
-    # Sort programs by name for consistent presentation.
-    for program_list in programs_by_run.itervalues():
-        program_list.sort(key=lambda p: p['name'])
-
-    return programs_by_run, course_ids
 
 
 def get_program_marketing_url(programs_config):
@@ -118,9 +43,7 @@ def attach_program_detail_url(programs):
         list, containing extended program dicts
     """
     for program in programs:
-        base = reverse('program_details_view', kwargs={'program_id': program['id']}).rstrip('/')
-        slug = slugify(program['name'])
-        program['detail_url'] = '{base}/{slug}'.format(base=base, slug=slug)
+        program['detail_url'] = reverse('program_details_view', kwargs={'program_uuid': program['uuid']})
 
     return programs
 
@@ -154,16 +77,15 @@ class ProgramProgressMeter(object):
     Keyword Arguments:
         enrollments (list): List of the user's enrollments.
     """
-    def __init__(self, user, enrollments=None, use_catalog=False):
+    def __init__(self, user, enrollments=None):
         self.user = user
         self.enrollments = enrollments
-        self.course_ids = None
+        self.course_run_ids = None
         self.course_certs = None
-        self.use_catalog = use_catalog
 
-        self.programs = attach_program_detail_url(get_programs(self.user, use_catalog=use_catalog))
+        self.programs = attach_program_detail_url(get_programs())
 
-    def engaged_programs(self, by_run=False):
+    def engaged_programs(self):
         """Derive a list of programs in which the given user is engaged.
 
         Returns:
@@ -173,18 +95,47 @@ class ProgramProgressMeter(object):
         self.enrollments = self.enrollments or list(CourseEnrollment.enrollments_for_user(self.user))
         self.enrollments.sort(key=lambda e: e.created, reverse=True)
 
-        programs_by_run, self.course_ids = get_programs_by_run(self.programs, self.enrollments)
+        # enrollment.course_id is really a CourseKey (╯ಠ_ಠ）╯︵ ┻━┻
+        self.course_run_ids = [unicode(e.course_id) for e in self.enrollments]
 
-        if by_run:
-            return programs_by_run
+        programs_by_run = self.get_programs_by_run()
 
         programs = []
-        for course_id in self.course_ids:
-            for program in programs_by_run.get(course_id, []):
+        for course_run_id in self.course_run_ids:
+            for program in programs_by_run[course_run_id]:
                 if program not in programs:
                     programs.append(program)
 
         return programs
+
+    def get_programs_by_run(self):
+        """Intersect programs and enrollments.
+
+        Builds a dictionary of program dict lists keyed by course run ID. The resulting
+        dictionary is suitable in applications where programs must be filtered by
+        the course runs they contain (e.g., the student dashboard).
+
+        Returns:
+            defaultdict, programs keyed by course run ID
+        """
+        programs_by_run = defaultdict(list)
+
+        # TODO: These nested for loops are a common pattern. Add a utility function
+        # to the catalog utils which can do this looping and call a function?
+        for program in self.programs:
+            for course in program['courses']:
+                for run in course['course_runs']:
+                    run_id = run['key']
+                    if run_id in self.course_run_ids:
+                        program_list = programs_by_run[run_id]
+                        if program not in program_list:
+                            program_list.append(program)
+
+        # Sort programs by title for consistent presentation.
+        for program_list in programs_by_run.itervalues():
+            program_list.sort(key=lambda p: p['title'])
+
+        return programs_by_run
 
     @property
     def progress(self):
