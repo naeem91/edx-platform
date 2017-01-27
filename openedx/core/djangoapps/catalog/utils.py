@@ -76,7 +76,8 @@ def get_programs(user=None, uuid=None, type=None):  # pylint: disable=redefined-
 
 
 def get_program_types(user=None):  # pylint: disable=redefined-builtin
-    """Retrieve all program types from the catalog service.
+    """
+    Retrieve all program types from the catalog service.
 
     Returns:
         list of dict, representing program types.
@@ -101,18 +102,26 @@ def get_program_types(user=None):  # pylint: disable=redefined-builtin
         return []
 
 
-def get_programs_data(user=None):
-    """Return the list of Programs after adding the ProgramType Logo Image"""
+def get_active_programs_data(user=None, program_id=None):
+    """
+    This will return the program details with its corresponding program_type if program_id
+    is given otherwise returns the list of all the active programs with their program_types.
+    """
+    program_data = []
+    programs = get_programs(user, program_id)
+    if not programs:
+        return None
 
-    programs_list = get_programs(user)
-    program_types = get_program_types(user)
+    program_types = {program_type["name"]: program_type for program_type in get_program_types(user)}
+    # get_programs returns a dict when provided with the program_id parameter.
+    if isinstance(programs, dict):
+        programs = [programs]
 
-    program_types_lookup_dict = {program_type["name"]: program_type for program_type in program_types}
-
-    for program in programs_list:
-        program["logo_image"] = program_types_lookup_dict[program["type"]]["logo_image"]
-
-    return programs_list
+    for program in programs:
+        if program["status"] == "active":
+            program["type"] = program_types[program["type"]]
+            program_data.append(program)
+    return program_data
 
 
 def munge_catalog_program(catalog_program):
