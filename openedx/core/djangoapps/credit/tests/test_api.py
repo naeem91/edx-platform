@@ -622,7 +622,7 @@ class CreditRequirementApiTests(CreditApiTestBase):
         self.assertFalse(api.is_user_eligible_for_credit(user.username, self.course_key))
 
         # Satisfy the other requirement
-        with self.assertNumQueries(21):
+        with self.assertNumQueries(23):
             api.set_credit_requirement_status(
                 user,
                 self.course_key,
@@ -676,7 +676,7 @@ class CreditRequirementApiTests(CreditApiTestBase):
         # Delete the eligibility entries and satisfy the user's eligibility
         # requirement again to trigger eligibility notification
         CreditEligibility.objects.all().delete()
-        with self.assertNumQueries(16):
+        with self.assertNumQueries(18):
             api.set_credit_requirement_status(
                 user,
                 self.course_key,
