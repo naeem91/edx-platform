@@ -15,6 +15,7 @@ from lms.djangoapps.grades.config.models import PersistentGradesEnabledFlag
 from openedx.core.djangoapps.content.block_structure.api import get_block_structure_manager
 from openedx.core.djangoapps.signals.signals import COURSE_GRADE_CHANGED
 from xmodule import block_metadata_utils
+from xmodule.modulestore.django import modulestore
 
 from ..models import PersistentCourseGrade
 from .subsection_grade import SubsectionGradeFactory
@@ -31,8 +32,8 @@ class CourseGrade(object):
     def __init__(self, student, course, course_structure):
         self.student = student
         self.course = course
-        self.course_version = getattr(course, 'course_version', None)
-        self.course_edited_timestamp = getattr(course, 'subtree_edited_on', None)
+        self.course_version = getattr(course_structure, 'course_version', None)
+        self.course_edited_timestamp = getattr(course_structure, 'subtree_edited_on', None)
         self.course_structure = course_structure
         self._percent = None
         self._letter_grade = None
@@ -331,6 +332,7 @@ class CourseGradeFactory(object):
         If read_only is True, doesn't save any updates to the grades.
         Raises a PermissionDenied if the user does not have course access.
         """
+        # with modulestore().bulk_operations(course.id):
         course_structure = get_course_blocks(
             student,
             course.location,
@@ -364,30 +366,32 @@ class CourseGradeFactory(object):
         # 2. Optimization: the collected course_structure is not
         #    retrieved from the data store multiple times.
 
-        collected_block_structure = get_block_structure_manager(course.id).get_collected()
-        for student in students:
-            with dog_stats_api.timer('lms.grades.CourseGradeFactory.iter', tags=[u'action:{}'.format(course.id)]):
-                try:
-                    course_grade = CourseGradeFactory().create(student, course, collected_block_structure)
-                    yield self.GradeResult(student, course_grade, "")
+        with modulestore().bulk_operations(course.id):
+            collected_block_structure = get_block_structure_manager(course.id).get_collected()
+            for student in students:
+                with dog_stats_api.timer('lms.grades.CourseGradeFactory.iter', tags=[u'action:{}'.format(course.id)]):
+                    try:
+                        course_grade = CourseGradeFactory().create(student, course, collected_block_structure)
+                        yield self.GradeResult(student, course_grade, "")
 
-                except Exception as exc:  # pylint: disable=broad-except
-                    # Keep marching on even if this student couldn't be graded for
-                    # some reason, but log it for future reference.
-                    log.exception(
-                        'Cannot grade student %s (%s) in course %s because of exception: %s',
-                        student.username,
-                        student.id,
-                        course.id,
-                        exc.message
-                    )
-                    yield self.GradeResult(student, None, exc.message)
+                    except Exception as exc:  # pylint: disable=broad-except
+                        # Keep marching on even if this student couldn't be graded for
+                        # some reason, but log it for future reference.
+                        log.exception(
+                            'Cannot grade student %s (%s) in course %s because of exception: %s',
+                            student.username,
+                            student.id,
+                            course.id,
+                            exc.message
+                        )
+                        yield self.GradeResult(student, None, exc.message)
 
     def update(self, student, course, course_structure):
         """
         Updates the CourseGrade for this Factory's student.
         """
-        self._compute_and_update_grade(student, course, course_structure)
+        with modulestore().bulk_operations(course.id):
+            self._compute_and_update_grade(student, course, course_structure)
 
     def get_persisted(self, student, course):
         """
