@@ -26,7 +26,14 @@ from django.core import mail
 from django.core.urlresolvers import reverse, NoReverseMatch, reverse_lazy
 from django.core.validators import validate_email, ValidationError
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseServerError, Http404
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseServerError,
+    Http404,
+    HttpResponseRedirect
+)
 from django.shortcuts import redirect
 from django.utils.encoding import force_bytes, force_text
 from django.utils.translation import ungettext
@@ -54,7 +61,12 @@ from student.models import (
     CourseEnrollmentAllowed, UserStanding, LoginFailures,
     create_comments_service_user, PasswordHistory, UserSignupSource,
     DashboardConfiguration, LinkedInAddToProfileConfiguration, ManualEnrollmentAudit, ALLOWEDTOENROLL_TO_ENROLLED,
-    LogoutViewConfiguration)
+    LogoutViewConfiguration,
+    CandidateProfile,
+    CandidateCourse,
+    CandidateExpertise,
+    CandidateTechnology
+)
 from student.forms import AccountCreationForm, PasswordResetFormNoActive, get_registration_extension_form
 from lms.djangoapps.commerce.utils import EcommerceService  # pylint: disable=import-error
 from lms.djangoapps.verify_student.models import SoftwareSecurePhotoVerification  # pylint: disable=import-error
@@ -544,9 +556,36 @@ def is_course_blocked(request, redeemed_registration_codes, course_key):
 
 @login_required
 @ensure_csrf_cookie
+def arbisoft_survey(request):
+    from .arbisoft.form import (
+        CandidateProfileForm,
+        CandidateCourseForm,
+        CandidateExpertiseForm,
+        CandidateTechnologyForm
+    )
+
+    if request.method == "POST":
+        redirect_uri = reverse('dashboard')
+        return HttpResponseRedirect(redirect_uri)
+
+    profile = CandidateProfileForm()
+    courses = CandidateCourseForm()
+    expertise = CandidateExpertiseForm()
+    technology = CandidateTechnologyForm()
+
+    context = {
+        'profile': profile,
+        'courses': courses,
+        'expertise': expertise,
+        'technology': technology
+    }
+    return render_to_response('arbisoft_survey.html', context)
+
+
+@login_required
+@ensure_csrf_cookie
 def dashboard(request):
     user = request.user
-
     platform_name = configuration_helpers.get_value("platform_name", settings.PLATFORM_NAME)
 
     # we want to filter and only show enrollments for courses within
@@ -747,6 +786,27 @@ def dashboard(request):
             'use_ecommerce_payment_flow': True,
             'ecommerce_payment_page': ecommerce_service.payment_page_url(),
         })
+
+    # check if we need survay for not
+    arbi_profile = CandidateProfile.objects.filter(user=user)
+    if  arbi_profile.exists():
+        arbi_profile_obj = arbi_profile.first()
+        try:
+            CandidateCourse.objects.get(candidate=arbi_profile_obj)
+            CandidateExpertise.objects.get(candidate=arbi_profile_obj)
+            CandidateTechnology.objects.get(candidate=arbi_profile_obj)
+        except CandidateCourse.DoesNotExist:
+            redirect_uri = reverse('arbisoft_survey')
+            return HttpResponseRedirect(redirect_uri)
+        except CandidateExpertise.DoesNotExist:
+            redirect_uri = reverse('arbisoft_survey')
+            return HttpResponseRedirect(redirect_uri)
+        except CandidateTechnology.DoesNotExist:
+            redirect_uri = reverse('arbisoft_survey')
+            return HttpResponseRedirect(redirect_uri)
+    else:
+        redirect_uri = reverse('arbisoft_survey')
+        return HttpResponseRedirect(redirect_uri)
 
     return render_to_response('dashboard.html', context)
 

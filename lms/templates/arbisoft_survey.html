@@ -1,0 +1,69 @@
+<%inherit file="arbisoft_main.html" />
+<%def name="online_help_token()"><% return "learnerdashboard" %></%def>
+<%def name="get_label(name)">
+<%
+    labels = {
+        "graduation_date": "Graduating on",
+        "phone_number": "Contact number",
+        "cgpa": "CGPA",
+        "position_in_class": "Position in class",
+        "academic_projects": "Tell us something about your university project(s)",
+        "extra_curricular_activities": "List down any extra curricular activities you're involved in(if any)",
+        "freelance_work": "Mention any freelance work you do/have done?",
+        "accomplishment": "Your biggest accomplishment to-date?",
+        "individuality_factor": "What makes you different from your batch mates?",
+        "ideal_organization": "Describe your ideal organization?",
+        "why_arbisoft": "Why Arbisoft?",
+        "expected_salary": "Your salary expectations?",
+        "career_plan": "Your career plans two years down the line?",
+        "references": "Mention two university references along with their position and contact number",
+        "other_studied_course": "Other",
+        "other_technology": "Other"
+    }
+    return labels.get(name, "Please enter:")
+%>
+</%def>
+<%namespace name='static' file='static_content.html'/>
+
+<%!
+from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext as _
+from django.template import RequestContext
+import third_party_auth
+from third_party_auth import pipeline
+from openedx.core.djangolib.js_utils import dump_js_escaped_json, js_escaped_string
+from openedx.core.djangolib.markup import HTML, Text
+%>
+
+<main id="main" aria-label="Content" tabindex="-1">
+    <div class="container dashboard" id="dashboard-main">
+      <div class="my-courses" id="my-courses">
+        <header class="wrapper-header-courses">
+          <h2 class="header-courses">${_("Please fill this form")}</h2>
+        </header>
+        <form method="POST" action="/arbisoft_survey" class="post-form">
+            <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
+            %for element in profile:
+                %if element.name == 'other_studied_course':
+                    ${courses}
+                    ${element}
+                %elif element.name == 'other_technology':
+                    ${technology}
+                    ${element}
+                %else:
+                    <div class="form-group">
+                      <label for="id_${element.name}">${get_label(element.name)}</label>
+                      ${element}
+                    </div>
+                %endif
+                <br/>
+            %endfor
+            ${expertise}
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-lg center">Submit Your details</button>
+            </div>
+
+        </form>
+      </div>
+    </div>
+</main>

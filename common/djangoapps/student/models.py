@@ -474,6 +474,7 @@ class CandidateCourse(models.Model):
         max_length=255,
         blank=False,
         choices=arbi_constants.STUDIED_COURSES,
+        default=arbi_constants.INTRO_TO_COMPUTING
     )
 
 
@@ -483,6 +484,7 @@ class CandidateExpertise(models.Model):
         max_length=255,
         blank=False,
         choices=arbi_constants.EXPERTISE,
+        default=arbi_constants.INTRO_TO_COMPUTING
     )
     rank = models.IntegerField(blank=False)
 
@@ -493,6 +495,7 @@ class CandidateTechnology(models.Model):
         max_length=255,
         blank=False,
         choices=arbi_constants.TECHNOLOGIES,
+        default=arbi_constants.PYTHON_DJANGO
     )
 
 
