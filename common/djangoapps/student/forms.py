@@ -281,3 +281,141 @@ def get_registration_extension_form(*args, **kwargs):
     module, klass = settings.REGISTRATION_EXTENSION_FORM.rsplit('.', 1)
     module = import_module(module)
     return getattr(module, klass)(*args, **kwargs)
+
+
+class ExamRegistrationExtensionForm(forms.Form):
+    """
+    For Arbisoft Exam registration
+    """
+    TEXT_MIN_LEN = 3
+    TEXT_MAX_LEN = 255
+
+    STUDIED_COURSES = (
+        ('INTRO_TO_COMPUTING', 'INTRO_TO_COMPUTING'),
+        ('PROGRAMMING', 'PROGRAMMING'),
+        # (OOP, OOP),
+        # (DATA_STRUCTURES, DATA_STRUCTURES),
+        # (COMPUTER_ORG_ASSEMBLY_LANG, COMPUTER_ORG_ASSEMBLY_LANG),
+        # (SOFTWARE_ENGINEERING, SOFTWARE_ENGINEERING),
+        # (COMPUTER_NETWORKS, COMPUTER_NETWORKS),
+        # (AI, AI),
+        # (DATABASES, DATABASES),
+        # (OS, OS),
+        # (ALGORITHMS, ALGORITHMS),
+        # (BIO_INFORMATICS, BIO_INFORMATICS),
+        # (OTHER, OTHER),
+    )
+
+    current_location = forms.CharField(
+        label="Current Location", min_length=TEXT_MIN_LEN, max_length=TEXT_MAX_LEN, error_messages={
+            "required": u"Please specify your current location",
+            "invalid": u""
+        }
+    )
+
+    permanent_address = forms.CharField(
+        label="Permanent Address", min_length=TEXT_MIN_LEN, max_length=TEXT_MAX_LEN, error_messages={
+            "required": u"Please specify your Permanent Address",
+            "invalid": u""
+        }
+    )
+
+    contact_number = forms.IntegerField(
+        label="Contact Number", error_messages={
+            "required": u"Please specify your contact number",
+            "invalid": u""
+        }
+    )
+
+    cgpa = forms.FloatField(
+        label="CGPA", error_messages={
+            "required": u"Please specify your CGPA",
+            "invalid": u""
+        }
+    )
+
+    class_position = forms.CharField(
+        label="Position in class", error_messages={
+            "required": u"Please specify your position in class",
+            "invalid": u""
+        }
+    )
+
+    graduating_on = forms.CharField(
+        label="Graduating On", error_messages={
+            "required": u"Please specify your graduate date",
+            "invalid": u""
+        },
+        widget=forms.DateInput
+    )
+
+    check_mark_studied_courses = forms.MultipleChoiceField(
+        label="Check mark the courses you studied", error_messages={
+            "required": u"Please specify your graduate date",
+            "invalid": u""
+        },
+        choices=STUDIED_COURSES
+    )
+
+    technology_to_learn = forms.MultipleChoiceField(
+        #widget=forms.CheckboxSelectMultiple,
+        label="Mark the technology you'd like to work on/learn", error_messages={
+            "required": u"Please specify your choices",
+            "invalid": u""
+        },
+        choices=STUDIED_COURSES
+    )
+
+    university_projects = forms.CharField(
+        label="Tell us something about your university projects", error_messages={
+            "required": u"Please specify your choices",
+            "invalid": u""
+        },
+    )
+
+    extra_curricular = forms.CharField(
+        label="List down any extra curricular activities you're involved in(if any)", error_messages={
+            "required": u"Please specify your choices",
+            "invalid": u""
+        },
+    )
+
+    freelance_work = forms.CharField(
+        label="Mention any freelance work you do/have done?", error_messages={
+            "required": u"Please specify your choices",
+            "invalid": u""
+        },
+    )
+
+    accomplishment = forms.CharField(
+        label="Your biggest accomplishment to-date?", error_messages={
+            "required": u"Please specify your choices",
+            "invalid": u""
+        },
+    )
+
+    def save(self, commit=None):  # pylint: disable=unused-argument
+        """
+        Store the result in the dummy storage dict.
+        """
+        print self
+
+    class Meta(object):
+        """
+        Set options for fields which can't be conveyed in their definition.
+        """
+        serialization_options = {
+            'contact_number': {
+                'field_type': 'text',
+            },
+            'cgpa': {
+                'field_type': 'text',
+            },
+            'check_mark_studied_courses': {
+                'field_type': 'select',
+            },
+            'technology_to_learn': {
+                'field_type': 'select',
+            },
+        }
+

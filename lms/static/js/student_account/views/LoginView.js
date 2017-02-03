@@ -97,9 +97,12 @@
                 }
             },
 
-            saveSuccess: function() {
+            saveSuccess: function(data) {
                 this.trigger('auth-complete');
                 this.element.hide( this.$resetSuccess );
+
+                // here redirect to the custom view for completing registration
+                // *********************************************************
             },
 
             saveError: function( error ) {
