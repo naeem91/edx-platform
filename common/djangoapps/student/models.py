@@ -47,6 +47,7 @@ from simple_history.models import HistoricalRecords
 from track import contexts
 from xmodule_django.models import CourseKeyField, NoneToEmptyManager
 
+from .arbisoft import constants as arbi_constants
 from lms.djangoapps.badges.utils import badges_enabled
 from certificates.models import GeneratedCertificate
 from course_modes.models import CourseMode
@@ -422,138 +423,78 @@ class UserProfile(models.Model):
         """
         return cls.PROFILE_COUNTRY_CACHE_KEY.format(user_id=user_id)
 
-INTRO_TO_COMPUTING = 'Introduction to computing'
-PROGRAMMING = 'Programming'
-OOP = 'Object oriented programming'
-DATA_STRUCTURES = 'Data Structures'
-COMPUTER_ORG_ASSEMBLY_LANG = 'Computer Organization and Assembly Language'
-SOFTWARE_ENGINEERING = 'Software Engineering'
-COMPUTER_NETWORKS = 'Computer networks'
-AI = 'Artificial intelligence'
-DATABASES = 'Databases'
-OS = 'Operating System'
-ALGORITHMS = 'Algorithms'
-BIO_INFORMATICS = 'Bio-Informatics'
-OTHER = 'Other'
 
-STUDIED_COURSES = (
-    (INTRO_TO_COMPUTING, INTRO_TO_COMPUTING),
-    (PROGRAMMING, PROGRAMMING),
-    (OOP, OOP),
-    (DATA_STRUCTURES, DATA_STRUCTURES),
-    (COMPUTER_ORG_ASSEMBLY_LANG, COMPUTER_ORG_ASSEMBLY_LANG),
-    (SOFTWARE_ENGINEERING, SOFTWARE_ENGINEERING),
-    (COMPUTER_NETWORKS, COMPUTER_NETWORKS),
-    (AI, AI),
-    (DATABASES, DATABASES),
-    (OS, OS),
-    (ALGORITHMS, ALGORITHMS),
-    (BIO_INFORMATICS, BIO_INFORMATICS),
-    (OTHER, OTHER),
-)
+class CandidateProfile(models.Model):
+    user = models.OneToOneField(User, unique=True, db_index=True, related_name='arbisoft_profile')
+    # Email address * --> AbstractUser.email
+    # Full Name: * --> UserProfile.name
+    # Graduating on *
+    graduation_date = models.DateTimeField(blank=False, null=False)
+    # Your current Location * --> UserProfile.location
+    # Permanent Address * --> UserProfile.mailing_address
+    # Contact Number (s) *
+    phone_number = models.CharField(max_length=20, blank=False, null=False)
+    # CGPA *
+    cgpa = models.DecimalField(max_digits=4, decimal_places=2, blank=False, null=False)
+    # Position in class *
+    position_in_class = models.CharField(max_length=25, blank=False, null=False)
 
-EXPERTISE = (
-    (INTRO_TO_COMPUTING, INTRO_TO_COMPUTING),
-    (PROGRAMMING, PROGRAMMING),
-    (OOP, OOP),
-    (DATA_STRUCTURES, DATA_STRUCTURES),
-    (COMPUTER_ORG_ASSEMBLY_LANG, COMPUTER_ORG_ASSEMBLY_LANG),
-    (SOFTWARE_ENGINEERING, SOFTWARE_ENGINEERING),
-    (COMPUTER_NETWORKS, COMPUTER_NETWORKS),
-    (AI, AI),
-    (DATABASES, DATABASES),
-    (OS, OS),
-    (ALGORITHMS, ALGORITHMS),
-    (BIO_INFORMATICS, BIO_INFORMATICS),
-)
+    # Tell us something about your university project(s) *
+    academic_projects = models.CharField(max_length=255, blank=False, null=False)
+    # List down any extra curricular activities you're involved in(if any) *
+    extra_curricular_activities = models.CharField(max_length=255, blank=False, null=False)
+    # Mention any freelance work you do/have done? *
+    freelance_work = models.CharField(max_length=255, blank=False, null=False)
+    # Your biggest accomplishment to-date? *
+    accomplishment = models.CharField(max_length=255, blank=False, null=False)
+    # What makes you different from your batch mates? *
+    individuality_factor = models.CharField(max_length=255, blank=False, null=False)
+    # Describe your ideal organization? *
+    ideal_organization = models.CharField(max_length=255, blank=False, null=False)
+    # Why Arbisoft? *
+    why_arbisoft = models.CharField(max_length=255, blank=False, null=False)
+    # Your salary expectations? *
+    expected_salary = models.IntegerField(blank=False, null=False)
+    # Your career plans two years down the line? *
+    career_plan = models.CharField(max_length=255, blank=False, null=False)
+    # Mention two university references along with their position and contact number * --> ProspectReference
+    # either char field or better to save in ProspectReference model
+    references = models.CharField(max_length=255, blank=False, null=False)
 
-PYTHON_DJANGO = 'Python/Django'
-SCRAPPY_DATASCIENCE = 'Scrappy/Data Science'
-ANDROID = 'Android'
-IOS = 'iOS'
-PHP = 'PHP'
-JAVASCRIPT = 'Javascript'
+    # studies courses --> CandidateCourse model
+    # experties rank --> CandidateExpertise model
+    # interested technologies --> CandidateTechnology model
+    other_studied_course = models.CharField(max_length=255, blank=True, null=True)
+    other_technology = models.CharField(max_length=255, blank=True, null=True)
 
-TECHNOLOGIES = (
-    (PYTHON_DJANGO, PYTHON_DJANGO),
-    (SCRAPPY_DATASCIENCE, SCRAPPY_DATASCIENCE),
-    (ANDROID, ANDROID),
-    (IOS, IOS),
-    (PHP, PHP),
-    (JAVASCRIPT, JAVASCRIPT),
-    (OTHER, OTHER),
-)
 
 class CandidateCourse(models.Model):
-    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, null=True)
     studied_course = models.CharField(
         max_length=255,
         blank=False,
-        choices=STUDIED_COURSES,
+        choices=arbi_constants.STUDIED_COURSES,
     )
 
 
 class CandidateExpertise(models.Model):
-    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, null=True)
     expertise = models.CharField(
         max_length=255,
         blank=False,
-        choices=EXPERTISE,
+        choices=arbi_constants.EXPERTISE,
     )
     rank = models.IntegerField(blank=False)
 
 
 class CandidateTechnology(models.Model):
-    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, null=True)
     technology = models.CharField(
         max_length=255,
         blank=False,
-        choices=TECHNOLOGIES,
+        choices=arbi_constants.TECHNOLOGIES,
     )
 
-
-class CandidateProfile(UserProfile):
-
-    # Email address * --> AbstractUser.email
-    # Full Name: * --> UserProfile.name
-    # Graduating on *
-    graduation_date = models.DateTimeField()
-    # Your current Location * --> UserProfile.location
-    # Permanent Address * --> UserProfile.mailing_address
-    # Contact Number (s) *
-    phone_number = models.CharField(max_length=20)
-    # CGPA *
-    cgpa = models.DecimalField()
-    # Position in class *
-    position_in_class = models.CharField(blank=True, max_length=25)
-
-    # studies courses --> CandidateCourse model
-    # experties rank --> CandidateExpertise model
-    # interested technologies --> CandidateTechnology model
-    other_studied_course = models.CharField(max_length=255)
-    other_technology = models.CharField(max_length=255)
-
-    # Tell us something about your university project(s) *
-    academic_projects = models.CharField(max_length=255)
-    # List down any extra curricular activities you're involved in(if any) *
-    extra_curricular_activities = models.CharField(max_length=255)
-    # Mention any freelance work you do/have done? *
-    freelance_work = models.CharField(max_length=255)
-    # Your biggest accomplishment to-date? *
-    accomplishment = models.CharField(max_length=255)
-    # What makes you different from your batch mates? *
-    individuality_factor = models.CharField(max_length=255)
-    # Describe your ideal organization? *
-    ideal_organization = models.CharField(max_length=255)
-    # Why Arbisoft? *
-    why_arbisoft = models.CharField(max_length=255)
-    # Your salary expectations? *
-    expected_salary = models.IntegerField()
-    # Your career plans two years down the line? *
-    career_plan = models.CharField(max_length=255)
-    # Mention two university references along with their position and contact number * --> ProspectReference
-    # either char field or better to save in ProspectReference model
-    references = models.CharField(max_length=255)
 
 # class ProspectReference(models.Model):
 #     """
