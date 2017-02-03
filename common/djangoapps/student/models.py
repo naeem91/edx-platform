@@ -422,6 +422,148 @@ class UserProfile(models.Model):
         """
         return cls.PROFILE_COUNTRY_CACHE_KEY.format(user_id=user_id)
 
+INTRO_TO_COMPUTING = 'Introduction to computing'
+PROGRAMMING = 'Programming'
+OOP = 'Object oriented programming'
+DATA_STRUCTURES = 'Data Structures'
+COMPUTER_ORG_ASSEMBLY_LANG = 'Computer Organization and Assembly Language'
+SOFTWARE_ENGINEERING = 'Software Engineering'
+COMPUTER_NETWORKS = 'Computer networks'
+AI = 'Artificial intelligence'
+DATABASES = 'Databases'
+OS = 'Operating System'
+ALGORITHMS = 'Algorithms'
+BIO_INFORMATICS = 'Bio-Informatics'
+OTHER = 'Other'
+
+STUDIED_COURSES = (
+    (INTRO_TO_COMPUTING, INTRO_TO_COMPUTING),
+    (PROGRAMMING, PROGRAMMING),
+    (OOP, OOP),
+    (DATA_STRUCTURES, DATA_STRUCTURES),
+    (COMPUTER_ORG_ASSEMBLY_LANG, COMPUTER_ORG_ASSEMBLY_LANG),
+    (SOFTWARE_ENGINEERING, SOFTWARE_ENGINEERING),
+    (COMPUTER_NETWORKS, COMPUTER_NETWORKS),
+    (AI, AI),
+    (DATABASES, DATABASES),
+    (OS, OS),
+    (ALGORITHMS, ALGORITHMS),
+    (BIO_INFORMATICS, BIO_INFORMATICS),
+    (OTHER, OTHER),
+)
+
+EXPERTISE = (
+    (INTRO_TO_COMPUTING, INTRO_TO_COMPUTING),
+    (PROGRAMMING, PROGRAMMING),
+    (OOP, OOP),
+    (DATA_STRUCTURES, DATA_STRUCTURES),
+    (COMPUTER_ORG_ASSEMBLY_LANG, COMPUTER_ORG_ASSEMBLY_LANG),
+    (SOFTWARE_ENGINEERING, SOFTWARE_ENGINEERING),
+    (COMPUTER_NETWORKS, COMPUTER_NETWORKS),
+    (AI, AI),
+    (DATABASES, DATABASES),
+    (OS, OS),
+    (ALGORITHMS, ALGORITHMS),
+    (BIO_INFORMATICS, BIO_INFORMATICS),
+)
+
+PYTHON_DJANGO = 'Python/Django'
+SCRAPPY_DATASCIENCE = 'Scrappy/Data Science'
+ANDROID = 'Android'
+IOS = 'iOS'
+PHP = 'PHP'
+JAVASCRIPT = 'Javascript'
+
+TECHNOLOGIES = (
+    (PYTHON_DJANGO, PYTHON_DJANGO),
+    (SCRAPPY_DATASCIENCE, SCRAPPY_DATASCIENCE),
+    (ANDROID, ANDROID),
+    (IOS, IOS),
+    (PHP, PHP),
+    (JAVASCRIPT, JAVASCRIPT),
+    (OTHER, OTHER),
+)
+
+class CandidateCourse(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    studied_course = models.CharField(
+        max_length=255,
+        blank=False,
+        choices=STUDIED_COURSES,
+    )
+
+
+class CandidateExpertise(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    expertise = models.CharField(
+        max_length=255,
+        blank=False,
+        choices=EXPERTISE,
+    )
+    rank = models.IntegerField(blank=False)
+
+
+class CandidateTechnology(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    technology = models.CharField(
+        max_length=255,
+        blank=False,
+        choices=TECHNOLOGIES,
+    )
+
+
+class CandidateProfile(UserProfile):
+
+    # Email address * --> AbstractUser.email
+    # Full Name: * --> UserProfile.name
+    # Graduating on *
+    graduation_date = models.DateTimeField()
+    # Your current Location * --> UserProfile.location
+    # Permanent Address * --> UserProfile.mailing_address
+    # Contact Number (s) *
+    phone_number = models.CharField(max_length=20)
+    # CGPA *
+    cgpa = models.DecimalField()
+    # Position in class *
+    position_in_class = models.CharField(blank=True, max_length=25)
+
+    # studies courses --> CandidateCourse model
+    # experties rank --> CandidateExpertise model
+    # interested technologies --> CandidateTechnology model
+    other_studied_course = models.CharField(max_length=255)
+    other_technology = models.CharField(max_length=255)
+
+    # Tell us something about your university project(s) *
+    academic_projects = models.CharField(max_length=255)
+    # List down any extra curricular activities you're involved in(if any) *
+    extra_curricular_activities = models.CharField(max_length=255)
+    # Mention any freelance work you do/have done? *
+    freelance_work = models.CharField(max_length=255)
+    # Your biggest accomplishment to-date? *
+    accomplishment = models.CharField(max_length=255)
+    # What makes you different from your batch mates? *
+    individuality_factor = models.CharField(max_length=255)
+    # Describe your ideal organization? *
+    ideal_organization = models.CharField(max_length=255)
+    # Why Arbisoft? *
+    why_arbisoft = models.CharField(max_length=255)
+    # Your salary expectations? *
+    expected_salary = models.IntegerField()
+    # Your career plans two years down the line? *
+    career_plan = models.CharField(max_length=255)
+    # Mention two university references along with their position and contact number * --> ProspectReference
+    # either char field or better to save in ProspectReference model
+    references = models.CharField(max_length=255)
+
+# class ProspectReference(models.Model):
+#     """
+#     Model to save References information of Prospect User
+#     """
+#     prospect_user = models.ForeignKey(ProspectProfile, on_delete=models.CASCADE)
+#     name = models.CharField(max_length=100)
+#     position = models.CharField(max_length=100)
+#     phone_number = models.CharField(max_length=20)
+
 
 @receiver(models.signals.post_save, sender=UserProfile)
 def invalidate_user_profile_country_cache(sender, instance, **kwargs):  # pylint:   disable=unused-argument, invalid-name
