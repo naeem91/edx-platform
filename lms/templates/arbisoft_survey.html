@@ -41,6 +41,15 @@ from openedx.core.djangolib.markup import HTML, Text
         <header class="wrapper-header-courses">
           <h2 class="header-courses">${_("Please fill this form")}</h2>
         </header>
+        %if profile.errors:
+            %for field in profile:
+                %for error in field.errors:
+                    <div class="alert alert-danger">
+                        <strong>${field.name} - ${error}</strong>
+                    </div>
+                %endfor
+            %endfor
+        %endif
         <form method="POST" action="/arbisoft_survey" class="post-form">
             <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
             %for element in profile:

@@ -563,22 +563,51 @@ def arbisoft_survey(request):
         CandidateExpertiseForm,
         CandidateTechnologyForm
     )
-
-    if request.method == "POST":
-        redirect_uri = reverse('dashboard')
-        return HttpResponseRedirect(redirect_uri)
-
-    profile = CandidateProfileForm()
-    courses = CandidateCourseForm()
-    expertise = CandidateExpertiseForm()
-    technology = CandidateTechnologyForm()
+    profile_form = CandidateProfileForm(request.POST or None)
+    courses_form = CandidateCourseForm(request.POST or None)
+    expertise_form = CandidateExpertiseForm(request.POST or None)
+    technology_form = CandidateTechnologyForm(request.POST or None)
 
     context = {
-        'profile': profile,
-        'courses': courses,
-        'expertise': expertise,
-        'technology': technology
+        'profile': profile_form,
+        'courses': courses_form,
+        'expertise': expertise_form,
+        'technology': technology_form
     }
+
+    if request.method == "POST":
+        user = request.user
+        print "is for valid", profile_form.is_valid()
+        if profile_form.is_valid():
+            print "saving ", request.method, request.user.username
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            profile.save()
+
+            # # save courses
+            # courses = courses_form.save(commit=False)
+            # courses.candidate = profile
+            # courses.save()
+            #
+            # # save expertise
+            # expertise = expertise_form.save(commit=False)
+            # expertise.candidate = profile
+            # expertise.save()
+            #
+            # # save technology
+            # technology = technology_form.save(commit=False)
+            # technology.candidate = profile
+            # technology.save()
+
+            # enroll user here
+
+            # make user active here
+            user.is_active = True
+            user.save()
+
+            redirect_uri = reverse('dashboard')
+            return HttpResponseRedirect(redirect_uri)
+
     return render_to_response('arbisoft_survey.html', context)
 
 
@@ -789,22 +818,23 @@ def dashboard(request):
 
     # check if we need survay for not
     arbi_profile = CandidateProfile.objects.filter(user=user)
-    if  arbi_profile.exists():
-        arbi_profile_obj = arbi_profile.first()
-        try:
-            CandidateCourse.objects.get(candidate=arbi_profile_obj)
-            CandidateExpertise.objects.get(candidate=arbi_profile_obj)
-            CandidateTechnology.objects.get(candidate=arbi_profile_obj)
-        except CandidateCourse.DoesNotExist:
-            redirect_uri = reverse('arbisoft_survey')
-            return HttpResponseRedirect(redirect_uri)
-        except CandidateExpertise.DoesNotExist:
-            redirect_uri = reverse('arbisoft_survey')
-            return HttpResponseRedirect(redirect_uri)
-        except CandidateTechnology.DoesNotExist:
-            redirect_uri = reverse('arbisoft_survey')
-            return HttpResponseRedirect(redirect_uri)
-    else:
+    # if  arbi_profile.exists():
+    #     arbi_profile_obj = arbi_profile.first()
+    #     try:
+    #         CandidateCourse.objects.get(candidate=arbi_profile_obj)
+    #         CandidateExpertise.objects.get(candidate=arbi_profile_obj)
+    #         CandidateTechnology.objects.get(candidate=arbi_profile_obj)
+    #     except CandidateCourse.DoesNotExist:
+    #         redirect_uri = reverse('arbisoft_survey')
+    #         return HttpResponseRedirect(redirect_uri)
+    #     except CandidateExpertise.DoesNotExist:
+    #         redirect_uri = reverse('arbisoft_survey')
+    #         return HttpResponseRedirect(redirect_uri)
+    #     except CandidateTechnology.DoesNotExist:
+    #         redirect_uri = reverse('arbisoft_survey')
+    #         return HttpResponseRedirect(redirect_uri)
+    # else:
+    if not arbi_profile.exists():
         redirect_uri = reverse('arbisoft_survey')
         return HttpResponseRedirect(redirect_uri)
 

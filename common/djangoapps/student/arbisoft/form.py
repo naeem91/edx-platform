@@ -40,7 +40,7 @@ class CandidateProfileForm(forms.ModelForm):
             'individuality_factor': forms.Textarea(attrs={'class': 'form-control'}),
             'ideal_organization': forms.Textarea(attrs={'class': 'form-control'}),
             'why_arbisoft': forms.Textarea(attrs={'class': 'form-control'}),
-            'expected_salary': forms.Textarea(attrs={'class': 'form-control'}),
+            'expected_salary': forms.NumberInput(attrs={'class': 'form-control'}),
             'career_plan': forms.Textarea(attrs={'class': 'form-control'}),
             'references': forms.Textarea(attrs={'class': 'form-control'}),
             'other_studied_course': forms.TextInput(attrs={'class': 'form-control'}),
