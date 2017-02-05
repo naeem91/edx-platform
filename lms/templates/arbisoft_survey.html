@@ -18,12 +18,43 @@
         "career_plan": "Your career plans two years down the line?",
         "references": "Mention two university references along with their position and contact number",
         "other_studied_course": "Other",
-        "other_technology": "Other"
+        "other_technology": "Other",
+        "expertise_ranking": "Mark the courses you are an expert at scale of 1 to 5, where 5 being expert and 1 being the least expert",
+        "studied_course": "Check mark the courses you studied",
+        "technology": "Mark the technology you'd like to work on/learn"
     }
     return labels.get(name, "Please enter:")
 %>
 </%def>
 <%namespace name='static' file='static_content.html'/>
+
+<style>
+    .login-register .form-field input, .financial-assistance-wrapper .financial-assistance-form .form-field input {
+        height: auto;
+    }
+    .ranking-div {
+        clear: both;
+        padding: 10px 0;
+        border-top: 1px solid #ccc;
+    }
+    .course-title {
+        display: inline-block;
+        line-height: 1.4;
+        width: 270px;
+    }
+    .ranking-div ul {
+        clear: both;
+        float: right;
+        list-style: outside none none;
+        margin: 5px;
+        padding: 0;
+    }
+    .ranking-div > ul li {
+        float: left;
+        margin-right: 35px;
+        padding: 0;
+    }
+</style>
 
 <%!
 from django.core.urlresolvers import reverse
@@ -36,43 +67,102 @@ from openedx.core.djangolib.markup import HTML, Text
 %>
 
 <main id="main" aria-label="Content" tabindex="-1">
-    <div class="container dashboard" id="dashboard-main">
-      <div class="my-courses" id="my-courses">
-        <header class="wrapper-header-courses">
-          <h2 class="header-courses">${_("Please fill this form")}</h2>
-        </header>
-        %if profile.errors:
-            %for field in profile:
-                %for error in field.errors:
-                    <div class="alert alert-danger">
-                        <strong>${field.name} - ${error}</strong>
-                    </div>
+    <div class="login-register">
+      <div class="form-type">
+          <div class="form-wrapper">
+              %if profile.errors or courses.errors or technology.errors:
+                <div class="status submission-error" aria-live="polite">
+                    <h4 class="message-title">We couldn't save your details.</h4>
+                    <ul class="message-copy">
+                        %for field in profile:
+                            %for error in field.errors:
+                                <li>${get_label(field.name)}: ${error}</li>
+                            %endfor
+                        %endfor
+                        %for field in courses:
+                            %for error in field.errors:
+                                <li>${get_label(field.name)}: ${error}</li>
+                            %endfor
+                        %endfor
+                        %for field in technology:
+                            %for error in field.errors:
+                                <li>${get_label(field.name)}: ${error}</li>
+                            %endfor
+                        %endfor
+                    </ul>
+                </div>
+              %endif
+            <form method="POST" action="/arbisoft_survey" class="post-form">
+                <div class="section-title lines">
+                    <h2>
+                        <span class="text">Complete Your Registration</span>
+                    </h2>
+                </div>
+                <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
+                %for element in profile:
+                    %if element.name == 'other_studied_course':
+                        <div class="form-field">
+                            %for course in courses:
+                                <label>${course.label}</label>
+                                %for field in course:
+                                    <div class="form-field">
+                                        <label for="${field.id_for_label}">
+                                            ${field.tag()}
+                                            ${field.choice_label}
+                                            %if loop.last:
+                                                ${element}
+                                            %endif
+                                        </label>
+                                    </div>
+                                %endfor
+                            %endfor
+                        </div>
+                    %elif element.name == 'other_technology':
+                        <div class="form-field">
+                            %for tech in technology:
+                                <label>${tech.label}</label>
+                                %for field in tech:
+                                    <div class="form-field">
+                                        <label for="${field.id_for_label}">
+                                            ${field.tag()}
+                                            ${field.choice_label}
+                                            %if loop.last:
+                                                ${element}
+                                            %endif
+                                        </label>
+                                    </div>
+                                %endfor
+                            %endfor
+                        </div>
+                    %else:
+                        <div class="form-field">
+                            <label for="id_${element.name}">${get_label(element.name)}</label>
+                            ${element}
+                        </div>
+                    %endif
+                    <br/>
                 %endfor
-            %endfor
-        %endif
-        <form method="POST" action="/arbisoft_survey" class="post-form">
-            <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
-            %for element in profile:
-                %if element.name == 'other_studied_course':
-                    ${courses}
-                    ${element}
-                %elif element.name == 'other_technology':
-                    ${technology}
-                    ${element}
-                %else:
-                    <div class="form-group">
-                      <label for="id_${element.name}">${get_label(element.name)}</label>
-                      ${element}
-                    </div>
-                %endif
-                <br/>
-            %endfor
-            ${expertise}
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary btn-lg center">Submit Your details</button>
-            </div>
+                <div class="form-field">
+                    <label>${get_label('expertise_ranking')}</label>
+                    ${ ranking_formset.management_form }
+                    %for form in ranking_formset:
+                        <div class="ranking-div">
+                            %for field in form:
+                                %if field.name == 'expertise':
+                                    <span class="course-title">${field.value()}</span>
+                                %endif
+                                ${field}
+                            %endfor
+                        </div>
+                    %endfor
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="action action-primary">Submit Your details</button>
+                </div>
+            </form>
+          </div>
+          </div>
+        </div>
+    </main>
 
-        </form>
-      </div>
-    </div>
-</main>
+

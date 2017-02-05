@@ -34,6 +34,7 @@ from django.http import (
     Http404,
     HttpResponseRedirect
 )
+from django.forms import modelformset_factory
 from django.shortcuts import redirect
 from django.utils.encoding import force_bytes, force_text
 from django.utils.translation import ungettext
@@ -67,6 +68,7 @@ from student.models import (
     CandidateExpertise,
     CandidateTechnology
 )
+from .arbisoft import constants as arbi_constants
 from student.forms import AccountCreationForm, PasswordResetFormNoActive, get_registration_extension_form
 from lms.djangoapps.commerce.utils import EcommerceService  # pylint: disable=import-error
 from lms.djangoapps.verify_student.models import SoftwareSecurePhotoVerification  # pylint: disable=import-error
@@ -565,20 +567,35 @@ def arbisoft_survey(request):
     )
     profile_form = CandidateProfileForm(request.POST or None)
     courses_form = CandidateCourseForm(request.POST or None)
-    expertise_form = CandidateExpertiseForm(request.POST or None)
     technology_form = CandidateTechnologyForm(request.POST or None)
+
+    CourseRankingFormset = modelformset_factory(
+        CandidateExpertise, form=CandidateExpertiseForm, extra=len(arbi_constants.EXPERTISE)
+    )
+
+    course_ranking_formset = CourseRankingFormset(
+        queryset=CandidateExpertise.objects.none(),
+        initial=[
+            {'expertise': course_id, 'rank': 1}
+            for course_id, course_name in arbi_constants.EXPERTISE
+        ]
+    )
 
     context = {
         'profile': profile_form,
         'courses': courses_form,
-        'expertise': expertise_form,
+        'ranking_formset': course_ranking_formset,
         'technology': technology_form
     }
 
     if request.method == "POST":
-        user = request.user
-        print "is for valid", profile_form.is_valid()
-        if profile_form.is_valid():
+        ranking_formset = CourseRankingFormset(data=request.POST)
+
+        details_valid = ranking_formset.is_valid() and profile_form.is_valid() and \
+                                        courses_form.is_valid() and technology_form.is_valid()
+
+        if details_valid:
+            user = request.user
             print "saving ", request.method, request.user.username
             profile = profile_form.save(commit=False)
             profile.user = user

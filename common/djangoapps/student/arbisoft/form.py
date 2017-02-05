@@ -7,6 +7,7 @@ from student.models import (
 )
 from student.arbisoft import constants as arbi_constants
 
+
 class CandidateProfileForm(forms.ModelForm):
     class Meta:
         model = CandidateProfile
@@ -29,22 +30,33 @@ class CandidateProfileForm(forms.ModelForm):
             'other_technology',
         )
         widgets = {
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'graduation_date': forms.DateInput(attrs={'class': 'form-control', "type": "date"}),
-            'cgpa': forms.NumberInput(attrs={'class': 'form-control', "type": "number"}),
-            'position_in_class': forms.TextInput(attrs={'class': 'form-control'}),
-            'academic_projects': forms.Textarea(attrs={'class': 'form-control'}),
-            'extra_curricular_activities': forms.Textarea(attrs={'class': 'form-control'}),
-            'freelance_work': forms.Textarea(attrs={'class': 'form-control'}),
-            'accomplishment': forms.Textarea(attrs={'class': 'form-control'}),
-            'individuality_factor': forms.Textarea(attrs={'class': 'form-control'}),
-            'ideal_organization': forms.Textarea(attrs={'class': 'form-control'}),
-            'why_arbisoft': forms.Textarea(attrs={'class': 'form-control'}),
-            'expected_salary': forms.NumberInput(attrs={'class': 'form-control'}),
-            'career_plan': forms.Textarea(attrs={'class': 'form-control'}),
-            'references': forms.Textarea(attrs={'class': 'form-control'}),
-            'other_studied_course': forms.TextInput(attrs={'class': 'form-control'}),
-            'other_technology': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'input-block', 'required': 'true'}),
+            'graduation_date': forms.DateInput(attrs={'class': 'input-block', "type": "date", 'required': 'true'}),
+            'cgpa': forms.NumberInput(attrs={'class': 'input-block', "type": "number", 'required': 'true'}),
+            'position_in_class': forms.TextInput(attrs={'class': 'input-block', 'required': 'true'}),
+            'academic_projects': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                       'required': 'true'}),
+            'extra_curricular_activities': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                                 'required': 'true'}),
+            'freelance_work': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                    'required': 'true'}),
+            'accomplishment': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                    'required': 'true'}),
+            'individuality_factor': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                          'required': 'true'}),
+            'ideal_organization': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                        'required': 'true'}),
+            'why_arbisoft': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                  'required': 'true'}),
+            'expected_salary': forms.NumberInput(attrs={'class': 'form-control', 'required': 'true'}),
+            'career_plan': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                 'required': 'true'}),
+            'references': forms.Textarea(attrs={'class': 'input-block', "type": "textarea", "rows": 4,
+                                                'required': 'true'}),
+            'other_studied_course': forms.TextInput(attrs={'class': 'input-inline',
+                                                           'style': 'display: inline; width: 30%'}),
+            'other_technology': forms.TextInput(attrs={'class': 'input-inline',
+                                                       'style': 'display: inline; width: 30%'}),
         }
 
 
@@ -57,7 +69,7 @@ class CandidateCourseForm(forms.ModelForm):
         }
         widgets = {
             'studied_course': forms.CheckboxSelectMultiple(
-                attrs={'style': 'list-style:none;'}
+                attrs={'class': 'input-inline checkbox'}
             )
         }
 
@@ -69,12 +81,10 @@ class CandidateExpertiseForm(forms.ModelForm):
             'expertise',
             'rank'
         )
-        labels = {
-            'expertise': "Mark the courses you are an expert at scale of 1 to 5, where 5 being expert and 1 being the least expert"
-        }
         widgets = {
-            'expertise': forms.RadioSelect(
-                attrs={'style': 'list-style:none;'}
+            'expertise': forms.HiddenInput(),
+            'rank': forms.RadioSelect(
+                choices=arbi_constants.EXPERTISE_RANKING
             )
         }
 
@@ -88,6 +98,6 @@ class CandidateTechnologyForm(forms.ModelForm):
         }
         widgets = {
             'technology': forms.CheckboxSelectMultiple(
-                attrs={'style': 'list-style:none;'}
+                attrs={'class': 'input-inline checkbox'}
             )
         }
