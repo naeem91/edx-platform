@@ -32,6 +32,9 @@
     .login-register .form-field input, .financial-assistance-wrapper .financial-assistance-form .form-field input {
         height: auto;
     }
+    .form-field input[type="radio"] {
+        width: 1em;
+    }
     .ranking-div {
         clear: both;
         padding: 10px 0;
@@ -54,6 +57,9 @@
         margin-right: 35px;
         padding: 0;
     }
+    .login-register .form-field label, .financial-assistance-wrapper .financial-assistance-form .form-field label {
+        font-weight: 600;
+    }
 </style>
 
 <%!
@@ -70,6 +76,7 @@ from openedx.core.djangolib.markup import HTML, Text
     <div class="login-register">
       <div class="form-type">
           <div class="form-wrapper">
+              <div class="status">This form must be filled before you can attempt the test</div>
               %if profile.errors or courses.errors or technology.errors:
                 <div class="status submission-error" aria-live="polite">
                     <h4 class="message-title">We couldn't save your details.</h4>
@@ -90,8 +97,8 @@ from openedx.core.djangolib.markup import HTML, Text
                             %endfor
                         %endfor
                     </ul>
-                </div>
               %endif
+              </div>
             <form method="POST" action="/arbisoft_survey" class="post-form">
                 <div class="section-title lines">
                     <h2>
