@@ -5,14 +5,6 @@
 <%namespace name='static' file='/static_content.html'/>
 
 <style>
-    #arbi-exam iframe {
-        position: relative;
-        top: 0;
-        left: 0;
-        width: 100%;
-        min-height: 700px;
-        border: none;
-    }
     #question-nav li{
         float: left;
         margin-left: 5px;
@@ -38,12 +30,6 @@
 
 <script type="text/template" id="arbisoft_exam">
     <%static:include path="arbisoft_exam/question_block.underscore" />
-</script>
-
-<script type="text/javascript">
-    function resizeIframe(iframe) {
-    iframe.height = iframe.contentWindow.document.body.scrollHeight +  "px";
-  }
 </script>
 
 <%block name="js_extra">
