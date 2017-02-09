@@ -8,17 +8,25 @@
 
     def time_left(start):
         tz = pytz.timezone('Asia/Karachi')
+
+        start = start.astimezone(tz)
         now = datetime.datetime.now(tz=tz)
         td = start - now
         hours = int(td.seconds // (60 * 60))
         mins = int((td.seconds // 60) % 60)
-        message = "Test is end"
-        if td.days > 0:
-             message = "Test start in {days} day(s)".format(days=td.days)
-        elif hours > 0:
-             message = "Test start in {hours} hour(s)".format(hours=hours)
-        elif mins > 0:
-             message = "Test start in {mins} min(s)".format(mins=mins)
+
+        d_string = "days" if td.days > 1 else "day"
+        h_string = "hours" if hours > 1 else "hour"
+        m_string = "minutes" if mins > 1 else "minute"
+
+        days_msg = "{} {}".format(td.days, d_string) if td.days > 0 else ""
+        hours_msg = "{} {}".format(hours, h_string) if hours > 0 else ""
+        mints_msg = "{} {}".format(mins, m_string) if m_string > 0 else ""
+
+        message = "Test starts in {} {} {}".format(
+            days_msg, hours_msg, mints_msg
+        )
+
         return message
 
 %>
